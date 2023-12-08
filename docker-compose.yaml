@@ -1,0 +1,8 @@
+version: '3.7'
+services:
+  app:
+    image: vbarbarosh/dev-proxy
+    ports:
+      - 3000:3000
+    volumes:
+      - ./var:/app/var
