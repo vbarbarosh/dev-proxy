@@ -13,6 +13,7 @@ const fs_read_utf8 = require('@vbarbarosh/node-helpers/src/fs_read_utf8');
 const hljs = require('highlight.js');
 const json_stringify_stable = require('@vbarbarosh/node-helpers/src/json_stringify_stable');
 const request = require('request');
+const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 const urlnorm = require('./helpers/urlnorm');
 const var_dir = require('./helpers/var_dir');
 
@@ -66,11 +67,27 @@ async function echo(req, res)
 async function proxy(req, res)
 {
     req.log(`[proxy_begin]`);
+
+    if (req.query.redirects > 0) {
+        const url = urlmod(`${req.headers['x-forwarded-proto'] || 'http'}://${req.headers['host']}${req.path}`, {...req.query, redirects: (req.query.redirects - 1) || null});
+        res.redirect(url);
+        end();
+        return;
+    }
+
+    if (!req.query.url) {
+        res.redirect('/');
+        end();
+        return;
+    }
+
     if (req.query.delay) {
         await Promise.delay(req.query.delay);
     }
+
     const url = urlnorm(req.query.url);
     req.pipe(request(url, {headers: req.query.headers}).on('error', error_handler)).pipe(res).on('end', end);
+
     function end() {
         req.log(`[proxy_end_ok]`);
     }
