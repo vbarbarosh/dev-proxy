@@ -1,4 +1,4 @@
-Proxy server for developers
+A proxy server for development
 
 ```bash
 npm start &
