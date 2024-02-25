@@ -9,6 +9,12 @@ curl http://127.0.0.1:3000/proxy?url=https://ip.guide&headers[accept]=*/*&redire
 fg
 ```
 
+## Docker
+
+```bash
+docker run --rm -p 3000:3000 vbarbarosh/dev-proxy
+```
+
 ## Use cases
 
 1. basic: fetch specified url
