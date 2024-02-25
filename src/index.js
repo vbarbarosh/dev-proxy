@@ -5,6 +5,7 @@ const Promise = require('bluebird');
 const cli = require('@vbarbarosh/node-helpers/src/cli');
 const express = require('express');
 const express_log = require('@vbarbarosh/express-helpers/src/express_log');
+const express_params = require('@vbarbarosh/express-helpers/src/express_params');
 const express_routes = require('@vbarbarosh/express-helpers/src/express_routes');
 const express_run = require('@vbarbarosh/express-helpers/src/express_run');
 const fs_path_resolve = require('@vbarbarosh/node-helpers/src/fs_path_resolve');
@@ -39,7 +40,8 @@ async function main()
     }));
 
     express_routes(app, [
-        {req: 'GET /', fn: echo},
+        {req: 'GET /', fn: home},
+        {req: 'GET /echo', fn: echo},
         {req: 'GET /proxy', fn: proxy},
         {req: 'ALL *', fn: page404},
     ]);
@@ -47,13 +49,18 @@ async function main()
     await express_run(app, 3000, process.env.DEVPROXY_LISTEN_HOST || 'localhost');
 }
 
-async function echo(req, res)
+async function home(req, res)
 {
     const s = await fs_read_utf8(fs_path_resolve(__dirname, '../README.md'));
     res.send(`
         <link rel="stylesheet" href="https://unpkg.com/@highlightjs/cdn-assets@11.9.0/styles/default.min.css">
         ${md.render(s)}
     `);
+}
+
+async function echo(req, res)
+{
+    res.send(express_params(req));
 }
 
 async function proxy(req, res)
