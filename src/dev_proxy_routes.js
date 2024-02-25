@@ -51,7 +51,7 @@ async function proxy(req, res)
     req.log(`[proxy_begin]`);
 
     if (req.query.redirects > 0) {
-        const url = urlmod(`${req.headers['x-forwarded-proto'] || 'http'}://${req.headers['host']}${req.path}`, {...req.query, redirects: (req.query.redirects - 1) || null});
+        const url = urlmod(`${req.headers['x-forwarded-proto'] || 'http'}://${req.headers['host']}${req.path}`, {redirects: (req.query.redirects - 1) || null});
         res.redirect(url);
         end();
         return;
