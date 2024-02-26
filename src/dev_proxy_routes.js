@@ -1,13 +1,16 @@
 const Markdown = require('markdown-it');
 const Promise = require('bluebird');
+const bytes = require('bytes');
 const express_params = require('@vbarbarosh/express-helpers/src/express_params');
 const fs_path_resolve = require('@vbarbarosh/node-helpers/src/fs_path_resolve');
 const fs_read_utf8 = require('@vbarbarosh/node-helpers/src/fs_read_utf8');
 const hljs = require('highlight.js');
 const json_stringify_stable = require('@vbarbarosh/node-helpers/src/json_stringify_stable');
 const request = require('request');
+const stream = require('stream');
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 const urlnorm = require('./helpers/urlnorm');
+const {Throttle} = require('stream-throttle');
 
 const md = new Markdown({
     highlight: function (str, language) {
@@ -48,35 +51,46 @@ async function echo(req, res)
 
 async function proxy(req, res)
 {
+    let end_ok = true;
     req.log(`[proxy_begin]`);
 
-    if (req.query.redirects > 0) {
-        const url = urlmod(`${req.headers['x-forwarded-proto'] || 'http'}://${req.headers['host']}${req.url}`, {redirects: (req.query.redirects - 1) || null});
-        res.redirect(url);
-        end();
-        return;
-    }
+    try {
+        if (req.query.redirects > 0) {
+            const url = urlmod(`${req.headers['x-forwarded-proto'] || 'http'}://${req.headers['host']}${req.url}`, {redirects: (req.query.redirects - 1) || null});
+            res.redirect(url);
+            return;
+        }
 
-    if (!req.query.url) {
-        res.redirect('/');
-        end();
-        return;
-    }
+        if (!req.query.url) {
+            res.redirect('/');
+            return;
+        }
 
-    if (req.query.delay) {
-        await Promise.delay(req.query.delay);
-    }
+        if (req.query.delay) {
+            await Promise.delay(req.query.delay);
+        }
 
-    const url = urlnorm(req.query.url);
-    req.pipe(request(url, {headers: req.query.headers}).on('error', error_handler)).pipe(res).on('end', end);
+        const url = urlnorm(req.query.url);
 
-    function end() {
-        req.log(`[proxy_end_ok]`);
+        if (req.query.throttle) {
+            const rate = Math.max(10, bytes.parse(req.query.throttle.replace(/([^1-9Bb]$)/, '$1b')));
+            const throttle = new Throttle({rate});
+            await stream.promises.pipeline(req, request(url, {headers: req.query.headers}), throttle, res);
+        }
+        else {
+            await stream.promises.pipeline(req, request(url, {headers: req.query.headers}), res);
+        }
     }
-    function error_handler(error) {
+    catch (error) {
+        end_ok = false;
         const tmp = {...error, message: error.message, stack: error.stack.split(/\n\s*/)};
         req.log(`[proxy_end_error] ${json_stringify_stable(tmp)}`);
         res.status(400).type('text').send(tmp);
+    }
+    finally {
+        if (end_ok) {
+            req.log('[proxy_end_ok]');
+        }
     }
 }
 
