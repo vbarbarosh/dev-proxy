@@ -77,6 +77,17 @@ async function proxy(req, res)
         if (req.query.throttle) {
             const rate = Math.max(10, bytes.parse(req.query.throttle.replace(/([^1-9Bb]$)/, '$1b')));
             const throttle = new Throttle({rate});
+            Object.defineProperty(throttle, 'statusCode', {
+                get: function () {
+                    return res.statusCode;
+                },
+                set: function (value) {
+                    res.statusCode = value;
+                },
+            });
+            throttle.setHeader = function (...args) {
+                return res.setHeader(...args);
+            };
             await stream.promises.pipeline(req, request(url, {headers: req.query.headers}), throttle, res);
         }
         else {
