@@ -38,10 +38,12 @@ function dev_proxy_routes()
 async function home(req, res)
 {
     const s = await fs_read_utf8(fs_path_resolve(__dirname, '../README.md'));
-    res.send(`
+    let html = `
         <link rel="stylesheet" href="https://unpkg.com/@highlightjs/cdn-assets@11.9.0/styles/default.min.css">
         ${md.render(s)}
-    `);
+    `;
+    html = html.replaceAll('http://127.0.0.1:3000/', urlmod(`${req.headers['x-forwarded-proto'] || 'http'}://${req.headers['host']}/`));
+    res.send(html);
 }
 
 async function echo(req, res)
