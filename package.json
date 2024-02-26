@@ -19,6 +19,7 @@
     "json-stringify-safe": "^5.0.1",
     "markdown-it": "^14.0.0",
     "node-http-proxy": "^0.2.4",
-    "request": "^2.88.2"
+    "request": "^2.88.2",
+    "stream-throttle": "^0.1.3"
   }
 }
