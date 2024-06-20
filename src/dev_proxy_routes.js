@@ -8,6 +8,8 @@ const hljs = require('highlight.js');
 const json_stringify_stable = require('@vbarbarosh/node-helpers/src/json_stringify_stable');
 const request = require('request');
 const stream = require('stream');
+const stream_discard = require('@vbarbarosh/node-helpers/src/stream_discard');
+const stream_md5 = require('@vbarbarosh/node-helpers/src/stream_md5');
 const urlmod = require('@vbarbarosh/node-helpers/src/urlmod');
 const urlnorm = require('./helpers/urlnorm');
 const {Throttle} = require('stream-throttle');
@@ -31,6 +33,8 @@ function dev_proxy_routes()
         {req: 'GET /', fn: home},
         {req: 'GET /echo', fn: echo},
         {req: 'GET /proxy', fn: proxy},
+        {req: 'ALL /null', fn: any_null},
+        {req: 'ALL /md5', fn: any_md5},
         {req: 'ALL *', fn: page404},
     ];
 }
@@ -49,6 +53,18 @@ async function home(req, res)
 async function echo(req, res)
 {
     res.send(express_params(req));
+}
+
+async function any_null(req, res)
+{
+    await stream.promises.finished(req.pipe(stream_discard()));
+    res.send();
+}
+
+async function any_md5(req, res)
+{
+    const [buf] = await stream.Readable.from(req.pipe(stream_md5())).toArray();
+    res.type('text/plain').send(buf.toString());
 }
 
 async function proxy(req, res)

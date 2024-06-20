@@ -3,6 +3,8 @@ A proxy server for development
 ```bash
 npm start &
 curl http://127.0.0.1:3000/echo
+curl http://127.0.0.1:3000/null -T a.iso
+curl http://127.0.0.1:3000/md5 -T a.iso
 curl 'http://127.0.0.1:3000/proxy?url=https://ip.guide&headers[accept]=*/*'
 curl 'http://127.0.0.1:3000/proxy?url=https://ip.guide&headers[accept]=*/*&delay=50000'
 curl -L 'http://127.0.0.1:3000/proxy?url=https://ip.guide&headers[accept]=*/*&redirects=3'
